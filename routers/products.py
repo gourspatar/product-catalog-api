@@ -31,9 +31,8 @@ products = [
 
 
 @router.get("/", response_model=list[Product])
-def get_products():
-    return products
-
+def get_products(db: Session = Depends(get_db)):
+    return db.query(ProductModel).all()
 
 @router.get("/{product_id}", response_model=Product)
 def get_product(product_id: int):
