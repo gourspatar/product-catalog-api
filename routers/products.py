@@ -12,24 +12,6 @@ router = APIRouter(
 )
 
 
-products = [
-    {
-        "id": 1,
-        "name": "Wireless Mouse",
-        "description": "Ergonomic wireless mouse",
-        "price": 799.00,
-        "category_id": 1,
-    },
-    {
-        "id": 2,
-        "name": "Mechanical Keyboard",
-        "description": "RGB mechanical keyboard",
-        "price": 2499.00,
-        "category_id": 1,
-    },
-]
-
-
 @router.get("/", response_model=list[Product])
 def get_products(db: Session = Depends(get_db)):
     return db.query(ProductModel).all()
