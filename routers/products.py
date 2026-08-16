@@ -35,15 +35,21 @@ def get_products(db: Session = Depends(get_db)):
     return db.query(ProductModel).all()
 
 @router.get("/{product_id}", response_model=Product)
-def get_product(product_id: int):
-    for product in products:
-        if product["id"] == product_id:
-            return product
+def get_product(
+    product_id: int,
+    db: Session = Depends(get_db),
+):
+    product = db.query(ProductModel).filter(
+        ProductModel.id == product_id
+    ).first()
 
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail="Product not found",
-    )
+    if product is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product not found",
+        )
+
+    return product
 
 
 @router.post(
