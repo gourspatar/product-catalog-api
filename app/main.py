@@ -1,8 +1,7 @@
 from fastapi import FastAPI
-
 from routers import products, categories
 from app.database import engine, Base
-from app.models import Product
+from app import models
 
     
 Base.metadata.create_all(bind=engine)

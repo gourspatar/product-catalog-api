@@ -12,3 +12,9 @@ class Product(Base):
     description: Mapped[str | None] = mapped_column(String(500), nullable=True)
     price: Mapped[float] = mapped_column(Float)
     category_id: Mapped[int] = mapped_column(Integer)
+
+class Category(Base):
+    __tablename__ = "categories"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(100))
