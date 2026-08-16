@@ -76,20 +76,30 @@ def create_product(
 
 
 @router.put("/{product_id}", response_model=Product)
-def update_product(product_id: int, product: ProductUpdate):
-    for existing_product in products:
-        if existing_product["id"] == product_id:
-            update_data = product.model_dump(exclude_unset=True)
+def update_product(
+    product_id: int,
+    product: ProductUpdate,
+    db: Session = Depends(get_db),
+):
+    existing_product = db.query(ProductModel).filter(
+        ProductModel.id == product_id
+    ).first()
 
-            existing_product.update(update_data)
+    if existing_product is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product not found",
+        )
 
-            return existing_product
+    update_data = product.model_dump(exclude_unset=True)
 
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail="Product not found",
-    )
+    for field, value in update_data.items():
+        setattr(existing_product, field, value)
 
+    db.commit()
+    db.refresh(existing_product)
+
+    return existing_product
 
 @router.delete("/{product_id}")
 def delete_product(product_id: int):
