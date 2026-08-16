@@ -102,17 +102,24 @@ def update_product(
     return existing_product
 
 @router.delete("/{product_id}")
-def delete_product(product_id: int):
-    for index, product in enumerate(products):
-        if product["id"] == product_id:
-            products.pop(index)
+def delete_product(
+    product_id: int,
+    db: Session = Depends(get_db),
+):
+    product = db.query(ProductModel).filter(
+        ProductModel.id == product_id
+    ).first()
 
-            return {
-                "message": "Product deleted successfully",
-                "product_id": product_id,
-            }
+    if product is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product not found",
+        )
 
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail="Product not found",
-    )
+    db.delete(product)
+    db.commit()
+
+    return {
+        "message": "Product deleted successfully",
+        "product_id": product_id,
+    }
