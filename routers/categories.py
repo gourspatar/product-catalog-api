@@ -13,20 +13,6 @@ router = APIRouter(
 )
 
 
-categories = [
-    {
-        "id": 1,
-        "name": "Electronics",
-        "description": "Electronic products and accessories",
-    },
-    {
-        "id": 2,
-        "name": "Accessories",
-        "description": "Computer and mobile accessories",
-    },
-]
-
-
 @router.get("/", response_model=list[Category])
 def get_categories(db: Session = Depends(get_db)):
     return db.query(CategoryModel).all()
@@ -96,17 +82,24 @@ def update_category(
     return existing_category
 
 @router.delete("/{category_id}")
-def delete_category(category_id: int):
-    for index, category in enumerate(categories):
-        if category["id"] == category_id:
-            categories.pop(index)
+def delete_category(
+    category_id: int,
+    db: Session = Depends(get_db),
+):
+    category = db.query(CategoryModel).filter(
+        CategoryModel.id == category_id
+    ).first()
 
-            return {
-                "message": "Category deleted successfully",
-                "category_id": category_id,
-            }
+    if category is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Category not found",
+        )
 
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail="Category not found",
-    )
+    db.delete(category)
+    db.commit()
+
+    return {
+        "message": "Category deleted successfully",
+        "category_id": category_id,
+    }
