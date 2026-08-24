@@ -69,22 +69,31 @@ def create_category(
 
     return new_category
 
-
 @router.put("/{category_id}", response_model=Category)
-def update_category(category_id: int, category: CategoryUpdate):
-    for existing_category in categories:
-        if existing_category["id"] == category_id:
-            update_data = category.model_dump(exclude_unset=True)
+def update_category(
+    category_id: int,
+    category: CategoryUpdate,
+    db: Session = Depends(get_db),
+):
+    existing_category = db.query(CategoryModel).filter(
+        CategoryModel.id == category_id
+    ).first()
 
-            existing_category.update(update_data)
+    if existing_category is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Category not found",
+        )
 
-            return existing_category
+    update_data = category.model_dump(exclude_unset=True)
 
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail="Category not found",
-    )
+    for field, value in update_data.items():
+        setattr(existing_category, field, value)
 
+    db.commit()
+    db.refresh(existing_category)
+
+    return existing_category
 
 @router.delete("/{category_id}")
 def delete_category(category_id: int):
