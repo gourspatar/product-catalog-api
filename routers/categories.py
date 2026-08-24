@@ -1,6 +1,10 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
+from sqlalchemy.orm import Session
 
 from schemas.category import Category, CategoryCreate, CategoryUpdate
+
+from app.database import get_db
+from app.models import Category as CategoryModel
 
 
 router = APIRouter(
@@ -24,36 +28,44 @@ categories = [
 
 
 @router.get("/", response_model=list[Category])
-def get_categories():
-    return categories
+def get_categories(db: Session = Depends(get_db)):
+    return db.query(CategoryModel).all()
 
 
 @router.get("/{category_id}", response_model=Category)
-def get_category(category_id: int):
-    for category in categories:
-        if category["id"] == category_id:
-            return category
+def get_category(
+    category_id: int,
+    db: Session = Depends(get_db),
+):
+    category = db.query(CategoryModel).filter(
+        CategoryModel.id == category_id
+    ).first()
 
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail="Category not found",
-    )
+    if category is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Category not found",
+        )
 
+    return category
 
 @router.post(
     "/",
     response_model=Category,
     status_code=status.HTTP_201_CREATED,
 )
-def create_category(category: CategoryCreate):
-    new_id = max((item["id"] for item in categories), default=0) + 1
+def create_category(
+    category: CategoryCreate,
+    db: Session = Depends(get_db),
+):
+    new_category = CategoryModel(
+        name=category.name,
+        description=category.description,
+    )
 
-    new_category = {
-        "id": new_id,
-        **category.model_dump(),
-    }
-
-    categories.append(new_category)
+    db.add(new_category)
+    db.commit()
+    db.refresh(new_category)
 
     return new_category
 
